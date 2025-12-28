@@ -16,6 +16,11 @@ const commands = await loadCommands();
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+
+  readyClient.user.setPresence({
+    activities: [{ name: 'OpenDomains Management system' }],
+    status: 'online',
+  });
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
