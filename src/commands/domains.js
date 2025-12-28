@@ -22,7 +22,7 @@ export const command = {
     .setName('domains')
     .setDescription('List your OpenDomains domains and their status.'),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     const sessions = await getCollection(collectionName);
     const userId = interaction.user.id;
