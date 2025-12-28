@@ -57,6 +57,7 @@ export const command = {
     );
 
     const verificationUrl = device.verification_uri_complete || device.verification_uri;
+    const DiscordverificationUrl = verificationUrl + `&APP=discord_bot`;
     const codeLine = device.user_code ? `Enter code **${device.user_code}**` : 'Approve the request';
 
     const loginMessage = [codeLine, 'This window will update once the login completes.'].join('\n');
@@ -64,7 +65,7 @@ export const command = {
     const components = verificationUrl
       ? [
           new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setLabel('Open login').setStyle(ButtonStyle.Link).setURL(verificationUrl)
+            new ButtonBuilder().setLabel('Open login').setStyle(ButtonStyle.Link).setURL(DiscordverificationUrl)
           ),
         ]
       : [];

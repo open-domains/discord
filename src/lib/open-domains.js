@@ -18,6 +18,13 @@ const api = axios.create({
   headers: { 'content-type': 'application/json' },
 });
 
+export class UnauthorizedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 export async function startDeviceAuth() {
   if (enableMock) {
     return {
@@ -104,6 +111,11 @@ export async function listDomains(apiKey) {
     const status = error.response?.status;
     const payload = error.response?.data;
     const message = payload?.error || payload?.message || error.message || 'Unable to fetch domains.';
+
+    if (status === 401) {
+      throw new UnauthorizedError(message);
+    }
+
     throw new Error(`Domain list failed (${status ?? 'request error'}): ${message}`);
   }
 }

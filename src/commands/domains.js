@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getCollection } from '../lib/mongo.js';
-import { listDomains } from '../lib/open-domains.js';
+import { UnauthorizedError, listDomains } from '../lib/open-domains.js';
 
 const collectionName = 'sessions';
 
@@ -64,6 +64,14 @@ export const command = {
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        await sessions.deleteOne({ userId });
+        await interaction.editReply(
+          'Your stored OpenDomains API key is no longer valid. Please /login again.'
+        );
+        return;
+      }
+
       await interaction.editReply(`Unable to fetch domains: ${error.message}`);
     }
   },
