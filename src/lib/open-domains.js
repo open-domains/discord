@@ -3,9 +3,11 @@ import axios from 'axios';
 const apiBase = process.env.OPEN_DOMAINS_API_BASE || 'https://beta.open-domains.net/api';
 const deviceStartPath = process.env.OPEN_DOMAINS_DEVICE_START_PATH || '/device-auth';
 const devicePollPath = process.env.OPEN_DOMAINS_DEVICE_POLL_PATH || '/device-auth/poll';
+const domainsPath = process.env.OPEN_DOMAINS_DOMAINS_PATH || '/domains';
 const enableMock = process.env.OPEN_DOMAINS_MOCK_DEVICE_AUTH === 'true';
 const normalizedStartPath = deviceStartPath.replace(/^\//, '');
 const normalizedPollPath = devicePollPath.replace(/^\//, '');
+const normalizedDomainsPath = domainsPath.replace(/^\//, '');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -84,4 +86,24 @@ export async function pollForDeviceKey(deviceCode, { interval, expiresIn } = {})
   }
 
   throw new Error('Device authorization expired before approval.');
+}
+
+export async function listDomains(apiKey) {
+  if (!apiKey) {
+    throw new Error('An API key is required to list domains.');
+  }
+
+  try {
+    const { data } = await api.get(normalizedDomainsPath, {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    });
+    return data?.domains ?? [];
+  } catch (error) {
+    const status = error.response?.status;
+    const payload = error.response?.data;
+    const message = payload?.error || payload?.message || error.message || 'Unable to fetch domains.';
+    throw new Error(`Domain list failed (${status ?? 'request error'}): ${message}`);
+  }
 }
