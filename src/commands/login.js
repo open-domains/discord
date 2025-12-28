@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } from 'discord.js';
 import { getCollection } from '../lib/mongo.js';
 import { pollForDeviceKey, startDeviceAuth } from '../lib/open-domains.js';
 
@@ -59,13 +59,17 @@ export const command = {
     const verificationUrl = device.verification_uri_complete || device.verification_uri;
     const codeLine = device.user_code ? `Enter code **${device.user_code}**` : 'Approve the request';
 
-    const loginMessage = [
-      verificationUrl ? `Visit ${verificationUrl}` : 'Open the OpenDomains verification page.',
-      codeLine,
-      'This window will update once the login completes.',
-    ].join('\n');
+    const loginMessage = [codeLine, 'This window will update once the login completes.'].join('\n');
 
-    await interaction.editReply(loginMessage);
+    const components = verificationUrl
+      ? [
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setLabel('Open login').setStyle(ButtonStyle.Link).setURL(verificationUrl)
+          ),
+        ]
+      : [];
+
+    await interaction.editReply({ content: loginMessage, components });
 
     try {
       const key = await pollForDeviceKey(device.device_code, {

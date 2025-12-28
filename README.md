@@ -25,6 +25,7 @@ OpenDomains Discord interface built with discord.js.
 - `/ping` – health check for the bot.
 - `/about` – quick context on the OpenDomains bot.
 - `/login` – start device-based authentication with OpenDomains and store the session in MongoDB.
+- `/logout` – clear your stored OpenDomains session/API key.
 
 ## Login prerequisites
 - MongoDB connection string in `MONGO_URI` (and optional `MONGO_DB_NAME` override).
