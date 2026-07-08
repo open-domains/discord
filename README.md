@@ -21,6 +21,28 @@ OpenDomains Discord interface built with discord.js.
    npm start
    ```
 
+## Docker
+1. Copy `.env.example` to `.env` and fill in the Discord values. For the bundled MongoDB service, use:
+   ```bash
+   MONGO_URI=mongodb://mongo:27017/open_domains_bot
+   ```
+2. Build the image:
+   ```bash
+   docker compose build
+   ```
+3. Register slash commands:
+   ```bash
+   docker compose run --rm bot npm run register
+   ```
+4. Start the bot and MongoDB:
+   ```bash
+   docker compose up -d
+   ```
+5. View logs:
+   ```bash
+   docker compose logs -f bot
+   ```
+
 ## Available commands
 - `/ping` – health check for the bot.
 - `/about` – quick context on the OpenDomains bot.
