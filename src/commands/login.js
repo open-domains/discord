@@ -11,7 +11,14 @@ function isActiveSession(session) {
 export const command = {
   data: new SlashCommandBuilder()
     .setName('login')
-    .setDescription('Authenticate with OpenDomains via device authorization.'),
+    .setDescription('Authenticate with OpenDomains via device authorization.')
+    .addStringOption((option) =>
+      option
+        .setName('token-name')
+        .setDescription('Name for the API token created in Open Domains.')
+        .setMaxLength(80)
+        .setRequired(false)
+    ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
@@ -29,7 +36,9 @@ export const command = {
     let device;
 
     try {
-      device = await startDeviceAuth();
+      const tokenName =
+        interaction.options.getString('token-name') || 'OpenDomains Discord Bot';
+      device = await startDeviceAuth(tokenName);
     } catch (error) {
       await interaction.editReply(`Unable to start login: ${error.message}`);
       return;
@@ -57,7 +66,9 @@ export const command = {
     );
 
     const verificationUrl = device.verification_uri_complete || device.verification_uri;
-    const DiscordverificationUrl = verificationUrl + `&APP=discord_bot`;
+    const discordVerificationUrl = verificationUrl
+      ? `${verificationUrl}${verificationUrl.includes('?') ? '&' : '?'}APP=discord_bot`
+      : undefined;
     const codeLine = device.user_code ? `Enter code **${device.user_code}**` : 'Approve the request';
 
     const loginMessage = [codeLine, 'This window will update once the login completes.'].join('\n');
@@ -65,7 +76,10 @@ export const command = {
     const components = verificationUrl
       ? [
           new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setLabel('Open login').setStyle(ButtonStyle.Link).setURL(DiscordverificationUrl)
+            new ButtonBuilder()
+              .setLabel('Open login')
+              .setStyle(ButtonStyle.Link)
+              .setURL(discordVerificationUrl)
           ),
         ]
       : [];
@@ -97,7 +111,7 @@ export const command = {
       );
 
       await interaction.followUp({
-        content: '✅ Login complete. Your OpenDomains API key is stored securely.',
+        content: 'Login complete. Your OpenDomains API key is stored securely.',
         ephemeral: true,
       });
     } catch (error) {

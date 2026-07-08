@@ -1,26 +1,40 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getCollection } from '../lib/mongo.js';
-import { UnauthorizedError, listDomains } from '../lib/open-domains.js';
+import { UnauthorizedError, getMe, listRecords } from '../lib/open-domains.js';
 
 const collectionName = 'sessions';
 
-function formatDomain(domain) {
-  const records = Array.isArray(domain.records) ? domain.records.join(', ') : '—';
-  const created = domain.createdAt ? new Date(domain.createdAt).toLocaleString() : 'unknown';
+function formatRecord(record) {
+  const ttl = record.ttl ? `${record.ttl}s` : 'auto';
 
   return [
-    `**Status:** ${domain.status ?? 'unknown'}`,
-    `**Type:** ${domain.type ?? '—'}`,
-    `**Records:** ${records}`,
-    `**Source:** ${domain.source ?? '—'}`,
-    `**Created:** ${created}`,
+    `**Type:** ${record.type ?? 'unknown'}`,
+    `**Content:** ${record.content ?? '—'}`,
+    `**TTL:** ${ttl}`,
+    `**Proxied:** ${record.proxied ? 'yes' : 'no'}`,
+  ].join('\n');
+}
+
+function formatStats(stats = {}) {
+  return [
+    `**Active records:** ${stats.active_records ?? 0}`,
+    `**Total records:** ${stats.total_records ?? 0}`,
+    `**Total requests:** ${stats.total_requests ?? 0}`,
+    `**Pending requests:** ${stats.pending_requests ?? 0}`,
+    `**Active API tokens:** ${stats.active_api_tokens ?? 0}`,
   ].join('\n');
 }
 
 export const command = {
   data: new SlashCommandBuilder()
     .setName('domains')
-    .setDescription('List your OpenDomains domains and their status.'),
+    .setDescription('Show your Open Domains account stats or DNS records for a domain.')
+    .addStringOption((option) =>
+      option
+        .setName('domain')
+        .setDescription('Domain or subdomain to list DNS records for.')
+        .setRequired(false)
+    ),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: false });
 
@@ -34,30 +48,48 @@ export const command = {
     }
 
     try {
-      const domains = await listDomains(session.apiKey);
+      const domain = interaction.options.getString('domain');
 
-      if (!domains.length) {
-        await interaction.editReply('No domains found for your account.');
+      if (!domain) {
+        const me = await getMe(session.apiKey);
+        const embed = new EmbedBuilder()
+          .setTitle('Your Open Domains account')
+          .setColor(0x5865f2)
+          .setDescription(me.email ?? me.display_name ?? 'Authenticated Open Domains account.')
+          .addFields({
+            name: 'Stats',
+            value: formatStats(me.stats),
+            inline: false,
+          });
+
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+
+      const records = await listRecords(domain);
+
+      if (!records.length) {
+        await interaction.editReply(`No DNS records found for ${domain}.`);
         return;
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('Your OpenDomains domains')
+        .setTitle(`DNS records for ${domain}`)
         .setColor(0x5865f2)
-        .setDescription('Domains linked to your account.');
+        .setDescription('Records returned by the Open Domains public API.');
 
-      domains.slice(0, 25).forEach((domain) => {
+      records.slice(0, 25).forEach((record) => {
         embed.addFields({
-          name: domain.id ?? 'Unknown domain',
-          value: formatDomain(domain),
+          name: record.name ?? domain,
+          value: formatRecord(record),
           inline: false,
         });
       });
 
-      if (domains.length > 25) {
+      if (records.length > 25) {
         embed.addFields({
-          name: 'More domains not shown',
-          value: `Showing 25 of ${domains.length}.`,
+          name: 'More records not shown',
+          value: `Showing 25 of ${records.length}.`,
           inline: false,
         });
       }

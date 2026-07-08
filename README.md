@@ -26,12 +26,15 @@ OpenDomains Discord interface built with discord.js.
 - `/about` – quick context on the OpenDomains bot.
 - `/login` – start device-based authentication with OpenDomains and store the session in MongoDB.
 - `/logout` – clear your stored OpenDomains session/API key.
-- `/domains` – list your domains and their statuses.
+- `/domains` – show your Open Domains account stats, or pass `domain` to list DNS records.
+- `/check` – check whether a subdomain label is available.
+- `/request-subdomain` – submit a new subdomain request for review.
 
 ## Login prerequisites
 - MongoDB connection string in `MONGO_URI` (and optional `MONGO_DB_NAME` override).
-- The device auth endpoints default to `https://beta.open-domains.net/api` with `/device-auth` and `/device-auth/poll`. Override with `OPEN_DOMAINS_API_BASE`, `OPEN_DOMAINS_DEVICE_START_PATH`, or `OPEN_DOMAINS_DEVICE_POLL_PATH` if the service uses different paths.
-- The domains listing endpoint defaults to `/domains`. Override with `OPEN_DOMAINS_DOMAINS_PATH` if needed.
+- The API defaults to `https://api.open-domains.net`, with device auth at `/deviceAuth` and the public API at `/`.
+- Device auth uses `POST /deviceAuth` with `action=request_code` and `action=poll`. Authenticated API calls use `Authorization: Bearer <api_key>`.
+- Override with `OPEN_DOMAINS_API_BASE`, `OPEN_DOMAINS_DEVICE_AUTH_PATH`, or `OPEN_DOMAINS_PUBLIC_API_PATH` if the service uses different paths.
 - For offline testing, set `OPEN_DOMAINS_MOCK_DEVICE_AUTH=true` to return dummy device codes and a mock API key without calling the real service.
 
 Add new commands by creating files in `src/commands/` that export `command = { data, execute }`. Commands are auto-loaded by both the runtime and the registration script.
