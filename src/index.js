@@ -61,7 +61,7 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot || !message.inGuild()) return;
   if (!message.reference?.messageId) return;
   if (!message.member?.roles?.cache?.has('1055639336286175274')) return;
-
+  
   const content = message.content?.trim();
   if (!content) return;
 
@@ -69,7 +69,6 @@ client.on(Events.MessageCreate, async (message) => {
   const existing = await sessions.findOne({ messageId: message.reference.messageId });
 
   if (!existing?.conversationId) {
-    await message.reply('I do not have an active agent conversation for that message yet.');
     return;
   }
 
