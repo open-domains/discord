@@ -21,10 +21,8 @@ async function register() {
       : Routes.applicationCommands(clientId);
     const scope = isGuildRegistration ? 'guild' : 'global';
 
-    if (isGuildRegistration) {
-      console.log('Clearing global commands before registering guild commands to avoid duplicates.');
-      await rest.put(Routes.applicationCommands(clientId), { body: [] });
-    }
+    console.log(`Clearing existing ${scope} commands before re-registering...`);
+    await rest.put(target, { body: [] });
 
     console.log(`Refreshing ${commandData.length} ${scope} application (/) commands...`);
     await rest.put(target, { body: commandData });
