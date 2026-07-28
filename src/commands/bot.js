@@ -36,16 +36,16 @@ function getBase44Client() {
 export const command = {
   data: new SlashCommandBuilder()
     .setName('bot')
-    .setDescription('Send a message to your configured Base44 agent.')
+    .setDescription('Send a message to the Open Domains agent.')
     .addStringOption((option) =>
       option
         .setName('message')
-        .setDescription('The message to send to the Base44 agent.')
+        .setDescription('The message to send to the Open Domains agent.')
         .setRequired(true)
         .setMaxLength(2000)
     ),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     const message = interaction.options.getString('message', true).trim();
 
@@ -73,11 +73,11 @@ export const command = {
       const agentReply = formatAgentResponse(latestAssistantMessage?.content);
 
       await interaction.editReply(
-        agentReply ? `Message sent to the Base44 agent. ${agentReply}`.trim() : 'Message sent to the Base44 agent.'
+        agentReply ? `Message sent to the Open Domains agent. ${agentReply}`.trim() : 'Message sent to the Open Domains agent.'
       );
     } catch (error) {
       const details = error.message || 'Unknown error';
-      await interaction.editReply(`Unable to send the message to the Base44 agent: ${details}`);
+      await interaction.editReply(`Unable to send the message to the Open Domains agent: ${details}`);
     }
   },
 };
