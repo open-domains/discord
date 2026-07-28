@@ -14,7 +14,7 @@ export const command = {
         .setMaxLength(2000)
     ),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     const allowedRoleId = '1055639336286175274';
     const hasRole = interaction.inGuild() && interaction.member?.roles?.cache?.has(allowedRoleId);
