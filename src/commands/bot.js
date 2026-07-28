@@ -1,10 +1,10 @@
 import { createClient } from '@base44/sdk';
 import { SlashCommandBuilder } from 'discord.js';
 
-const appId = process.env.BASE44_APP_ID;
+const appId = process.env.BASE44_APP_ID || '69b6e91dbe1cdaa155ba939d';
 const agentName = process.env.BASE44_AGENT_NAME;
 const serverUrl = process.env.BASE44_SERVER_URL || 'https://base44.app';
-const accessToken = process.env.BASE44_API_TOKEN || process.env.BASE44_AGENT_API_KEY || process.env.BASE44_TOKEN;
+const apiKey = process.env.BASE44_API_KEY || process.env.BASE44_AGENT_API_KEY || '0c695cc91dea47bc9cfeaaca3830f3cc';
 
 function formatAgentResponse(payload) {
   if (typeof payload === 'string') return payload;
@@ -27,8 +27,9 @@ function getBase44Client() {
 
   return createClient({
     appId,
-    token: accessToken,
-    serverUrl,
+    headers: {
+      api_key: apiKey,
+    },
   });
 }
 
