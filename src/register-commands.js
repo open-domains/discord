@@ -15,10 +15,16 @@ const commandData = await getCommandData();
 
 async function register() {
   try {
-    const target = guildId
+    const isGuildRegistration = Boolean(guildId);
+    const target = isGuildRegistration
       ? Routes.applicationGuildCommands(clientId, guildId)
       : Routes.applicationCommands(clientId);
-    const scope = guildId ? 'guild' : 'global';
+    const scope = isGuildRegistration ? 'guild' : 'global';
+
+    if (isGuildRegistration) {
+      console.log('Clearing global commands before registering guild commands to avoid duplicates.');
+      await rest.put(Routes.applicationCommands(clientId), { body: [] });
+    }
 
     console.log(`Refreshing ${commandData.length} ${scope} application (/) commands...`);
     await rest.put(target, { body: commandData });

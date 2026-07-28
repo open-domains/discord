@@ -16,4 +16,4 @@ COPY --chown=node:node src ./src
 
 USER node
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:with-register"]

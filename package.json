@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "register": "node src/register-commands.js"
+    "register": "node src/register-commands.js",
+    "start:with-register": "npm run register && npm start"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.40",

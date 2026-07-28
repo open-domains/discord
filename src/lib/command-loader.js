@@ -9,14 +9,24 @@ const commandsDirectory = path.join(__dirname, '..', 'commands');
 async function loadCommandModules() {
   const files = await fs.promises.readdir(commandsDirectory);
   const modules = [];
+  const seenCommandNames = new Set();
 
   for (const file of files) {
     if (!file.endsWith('.js')) continue;
 
     const moduleUrl = pathToFileURL(path.join(commandsDirectory, file));
     const module = await import(moduleUrl.href);
-    if (module?.command?.data && module?.command?.execute) {
-      modules.push(module.command);
+    const command = module?.command;
+
+    if (command?.data && typeof command.execute === 'function') {
+      const commandName = command.data.name;
+      if (seenCommandNames.has(commandName)) {
+        console.warn(`Skipping duplicate command name "${commandName}" from ${file}`);
+        continue;
+      }
+
+      seenCommandNames.add(commandName);
+      modules.push(command);
     } else {
       console.warn(`Skipping invalid command file: ${file}`);
     }

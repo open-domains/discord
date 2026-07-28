@@ -14,7 +14,15 @@ export const command = {
         .setMaxLength(2000)
     ),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply({ ephemeral: true });
+
+    const allowedRoleId = '1055639336286175274';
+    const hasRole = interaction.inGuild() && interaction.member?.roles?.cache?.has(allowedRoleId);
+
+    if (!hasRole) {
+      await interaction.editReply('You do not have permission to use this command.');
+      return;
+    }
 
     const message = interaction.options.getString('message', true).trim();
 
