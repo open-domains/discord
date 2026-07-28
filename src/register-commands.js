@@ -20,12 +20,16 @@ async function register() {
       ? Routes.applicationGuildCommands(clientId, guildId)
       : Routes.applicationCommands(clientId);
     const scope = isGuildRegistration ? 'guild' : 'global';
+    const payload = commandData.map((command) => ({
+      ...command,
+      type: 1,
+    }));
 
     console.log(`Clearing existing ${scope} commands before re-registering...`);
     await rest.put(target, { body: [] });
 
-    console.log(`Refreshing ${commandData.length} ${scope} application (/) commands...`);
-    await rest.put(target, { body: commandData });
+    console.log(`Refreshing ${payload.length} ${scope} application (/) commands...`);
+    await rest.put(target, { body: payload });
     console.log('Successfully reloaded application (/) commands.');
   } catch (error) {
     console.error('Error reloading application (/) commands:', error);
