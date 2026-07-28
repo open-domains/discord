@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { getCollection } from './lib/mongo.js';
 import { loadCommands } from './lib/command-loader.js';
+import { formatAgentResponse, getAgentName, getBase44Client } from './lib/base44-agent.js';
 
 const token = process.env.DISCORD_TOKEN;
 
@@ -9,7 +11,12 @@ if (!token) {
 }
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ],
 });
 
 const commands = await loadCommands();
@@ -47,6 +54,45 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else {
       await interaction.reply(reply);
     }
+  }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot || !message.inGuild()) return;
+  if (!message.reference?.messageId) return;
+  if (!message.member?.roles?.cache?.has('1055639336286175274')) return;
+
+  const content = message.content?.trim();
+  if (!content) return;
+
+  const sessions = await getCollection('sessions');
+  const existing = await sessions.findOne({ messageId: message.reference.messageId });
+
+  if (!existing?.conversationId) {
+    await message.reply('I do not have an active agent conversation for that message yet.');
+    return;
+  }
+
+  try {
+    const base44 = getBase44Client();
+    await base44.agents.addMessage(
+      { id: existing.conversationId },
+      {
+        role: 'user',
+        content,
+      }
+    );
+
+    const refreshedConversation = await base44.agents.getConversation(existing.conversationId);
+    const latestAssistantMessage = [...(refreshedConversation?.messages ?? [])]
+      .reverse()
+      .find((entry) => entry.role === 'assistant' && entry.content);
+    const agentReply = formatAgentResponse(latestAssistantMessage?.content);
+
+    await message.reply(agentReply ? `Forwarded to the agent. ${agentReply}`.trim() : 'Forwarded to the agent.');
+  } catch (error) {
+    console.error(error);
+    await message.reply(`Unable to forward your message to the agent: ${error.message}`);
   }
 });
 
