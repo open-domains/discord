@@ -181,7 +181,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const categoryInput = new TextInputBuilder()
       .setCustomId('ticket_category')
-      .setLabel('Is this an Acount issue, domain issue, or something else?')
+      .setLabel('Account or domain issue?')
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
