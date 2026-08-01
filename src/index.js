@@ -309,7 +309,21 @@ client.on(Events.MessageCreate, async (message) => {
       .find((entry) => entry.role === 'assistant' && entry.content);
     const agentReply = formatAgentResponse(latestAssistantMessage?.content);
 
-    await message.reply(agentReply ? `Forwarded to the agent. ${agentReply}`.trim() : 'Forwarded to the agent.');
+    const replyMessage = await message.reply(agentReply ? ` ${agentReply}`.trim() : 'Forwarded to the agent.');
+
+    await sessions.updateOne(
+      { messageId: replyMessage.id },
+      {
+        $set: {
+          messageId: replyMessage.id,
+          channelId: replyMessage.channelId,
+          guildId: replyMessage.guildId,
+          conversationId: existing.conversationId,
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
   } catch (error) {
     console.error(error);
     await message.reply(`Unable to forward your message to the agent: ${error.message}`);

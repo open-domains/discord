@@ -50,7 +50,7 @@ export const command = {
       const agentReply = formatAgentResponse(latestAssistantMessage?.content);
 
       const replyMessage = await interaction.editReply(
-        agentReply ? `Message sent to the Open Domains agent. ${agentReply}`.trim() : 'Message sent to the Open Domains agent.'
+        agentReply ? ` ${agentReply}`.trim() : 'Message sent to the Open Domains agent.'
       );
 
       const sessions = await getCollection('sessions');
