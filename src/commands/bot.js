@@ -16,8 +16,10 @@ export const command = {
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: false });
 
-    const allowedRoleId = '1055639336286175274';
-    const hasRole = interaction.inGuild() && interaction.member?.roles?.cache?.has(allowedRoleId);
+    const allowedRoleIds = ['1055639336286175274', '1065741580859887707'];
+    const hasRole =
+      interaction.inGuild() &&
+      interaction.member?.roles?.cache.some((role) => allowedRoleIds.includes(role.id));
 
     if (!hasRole) {
       await interaction.editReply('You do not have permission to use this command.');
