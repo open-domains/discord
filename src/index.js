@@ -20,6 +20,7 @@ import { formatAgentResponse, getAgentName, getBase44Client } from './lib/base44
 const token = process.env.DISCORD_TOKEN;
 const ticketCategoryId = process.env.TICKET_CATEGORY_ID || '1383178711511072928';
 const closedTicketCategoryId = process.env.CLOSED_TICKET_CATEGORY_ID || '1383178786756890826';
+const TICKET_VIEW_ROLE_IDS = ['1065741580859887707', '1055639336286175274'];
 
 if (!token) {
   throw new Error('Missing DISCORD_TOKEN in environment.');
@@ -79,28 +80,37 @@ async function createTicketChannel(guild, user) {
   const baseName = user.username.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 70);
   const channelName = `${baseName}-${caseNumber}`;
 
+  const permissionOverwrites = [
+    {
+      id: guild.roles.everyone.id,
+      deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
+    },
+    {
+      id: user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+        PermissionFlagsBits.AddReactions,
+      ],
+    },
+  ];
+
+  TICKET_VIEW_ROLE_IDS.forEach((roleId) => {
+    permissionOverwrites.push({
+      id: roleId,
+      allow: [PermissionFlagsBits.ViewChannel],
+    });
+  });
+
   const channel = await guild.channels.create({
     name: channelName,
     type: ChannelType.GuildText,
     parent: category.id,
     topic: `Support ticket for ${user.tag}`,
-    permissionOverwrites: [
-      {
-        id: guild.roles.everyone.id,
-        deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-      },
-      {
-        id: user.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.AttachFiles,
-          PermissionFlagsBits.EmbedLinks,
-          PermissionFlagsBits.AddReactions,
-        ],
-      },
-    ],
+    permissionOverwrites,
   });
 
   return channel;
@@ -118,6 +128,14 @@ async function closeTicketChannel(channel, user) {
   }
 
   await channel.setParent(closedCategory.id, { lockPermissions: false });
+
+  await Promise.all(
+    TICKET_VIEW_ROLE_IDS.map((roleId) =>
+      channel.permissionOverwrites.edit(roleId, {
+        ViewChannel: true,
+      }).catch(() => null)
+    )
+  );
 
   await channel.permissionOverwrites.edit(user.id, {
     SendMessages: false,
