@@ -21,6 +21,15 @@ const token = process.env.DISCORD_TOKEN;
 const ticketCategoryId = process.env.TICKET_CATEGORY_ID || '1383178711511072928';
 const closedTicketCategoryId = process.env.CLOSED_TICKET_CATEGORY_ID || '1383178786756890826';
 const TICKET_VIEW_ROLE_IDS = ['1065741580859887707', '1055639336286175274'];
+const READ_ONLY_PERMISSIONS = {
+  SendMessages: false,
+  AddReactions: false,
+  AttachFiles: false,
+  EmbedLinks: false,
+  CreatePublicThreads: false,
+  CreatePrivateThreads: false,
+  SendMessagesInThreads: false,
+};
 
 if (!token) {
   throw new Error('Missing DISCORD_TOKEN in environment.');
@@ -101,7 +110,14 @@ async function createTicketChannel(guild, user) {
   TICKET_VIEW_ROLE_IDS.forEach((roleId) => {
     permissionOverwrites.push({
       id: roleId,
-      allow: [PermissionFlagsBits.ViewChannel],
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+        PermissionFlagsBits.AddReactions,
+      ],
     });
   });
 
@@ -116,7 +132,7 @@ async function createTicketChannel(guild, user) {
   return channel;
 }
 
-async function closeTicketChannel(channel, user) {
+async function closeTicketChannel(channel) {
   const closedCategory = await channel.guild.channels.fetch(closedTicketCategoryId).catch(() => null);
 
   if (!closedCategory || closedCategory.type !== ChannelType.GuildCategory) {
@@ -129,22 +145,20 @@ async function closeTicketChannel(channel, user) {
 
   await channel.setParent(closedCategory.id, { lockPermissions: false });
 
+  const overwriteIds = new Set([
+    channel.guild.roles.everyone.id,
+    ...TICKET_VIEW_ROLE_IDS,
+    ...channel.permissionOverwrites.cache.keys(),
+  ]);
+
   await Promise.all(
-    TICKET_VIEW_ROLE_IDS.map((roleId) =>
-      channel.permissionOverwrites.edit(roleId, {
-        ViewChannel: true,
-      }).catch(() => null)
+    [...overwriteIds].map((overwriteId) =>
+      channel.permissionOverwrites.edit(overwriteId, {
+        ...READ_ONLY_PERMISSIONS,
+        ...(TICKET_VIEW_ROLE_IDS.includes(overwriteId) ? { ViewChannel: true } : {}),
+      })
     )
   );
-
-  await channel.permissionOverwrites.edit(user.id, {
-    SendMessages: false,
-    AddReactions: false,
-    AttachFiles: false,
-    EmbedLinks: false,
-    CreatePublicThreads: false,
-    CreatePrivateThreads: false,
-  });
 
   return { alreadyClosed: false };
 }
@@ -277,7 +291,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
-      const result = await closeTicketChannel(channel, interaction.user);
+      const result = await closeTicketChannel(channel);
 
       if (result.alreadyClosed) {
         await interaction.reply({ content: 'This ticket is already closed.', ephemeral: true });
